@@ -1,4 +1,4 @@
-https://kith.com/collections/vans-collection?sort_by=created-ascending
+https://kith.com/collections/vans-collection?sort_by=created-ascending,div.product-card,.product-card__title,.product-card__link@href,.product-card__price,.product-card__image-slide@href
 https://properlbc.com/collections/vans?sort_by=created-ascending
 https://blacksheepskateshop.com/collections/vans?sort_by=created-ascending
 https://jackssurfboards.com/collections/vans?sort_by=created-ascending

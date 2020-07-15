@@ -21,17 +21,22 @@ func main() {
 
 	scanner := bufio.NewScanner(fd)
 	for scanner.Scan() {
-		break
-		fmt.Println(string(scanner.Bytes()))
+		row := string(scanner.Bytes())
+		col := strings.Split(row, ",")
+
+		// Skip incomplete row/Not enough parameters
+		if len(col) < 3 {
+			continue
+		}
+		products, err := Scrape(col[0], col[1], col[2], col[3], col[4], col[5])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		for i := range products {
+			fmt.Println(products[i].Name)
+		}
 	}
 
-	link := "https://kith.com/collections/vans-collection?sort_by=created-ascending"
-
-	products, err := Scrape(link, "div.product-card", ".product-card__title", ".product-card__link@href", ".product-card__price", ".product-card__image-slide@href")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	fmt.Println(len(products))
 }
 
 type Item struct {
