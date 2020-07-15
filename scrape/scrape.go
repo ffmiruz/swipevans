@@ -27,33 +27,58 @@ func main() {
 
 	link := "https://kith.com/collections/vans-collection?sort_by=created-ascending"
 
-	Scrape(link, "div.product-card", ".product-card__title", ".product-card__link@href", ".product-card__price", ".product-card__image-slide@href")
+	products, err := Scrape(link, "div.product-card", ".product-card__title", ".product-card__link@href", ".product-card__price", ".product-card__image-slide@href")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	fmt.Println(len(products))
 }
 
-func Scrape(url, base string, selector ...string) {
+type Item struct {
+	Name  string
+	Link  string
+	Price string
+	Image string
+}
+
+func Scrape(url, base string, selector ...string) ([]Item, error) {
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		return nil, err
 	}
 	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		return nil, err
 	}
 	item := doc.Find(base)
+	collection := make([]Item, 0, len(item.Nodes))
 	for i := range item.Nodes {
-		for _, v := range selector {
+		var product Item
+		for k, v := range selector {
 			sel := strings.Split(v, "@")
+			result := ""
 			// Has attribute
 			if len(sel) > 1 {
-				pr := item.Eq(i).Find(sel[0]).AttrOr(sel[1], "")
-				fmt.Println(pr)
-				continue
+				result = item.Eq(i).Find(sel[0]).AttrOr(sel[1], "")
+			} else {
+				result = strings.TrimSpace(item.Eq(i).Find(v).Text())
 			}
-			pr := item.Eq(i).Find(v).Text()
-			fmt.Println(strings.TrimSpace(pr))
+			switch k {
+			case 0:
+				product.Name = result
+			case 1:
+				product.Link = result
+			case 2:
+				product.Price = result
+			case 3:
+				product.Image = result
+			default:
+			}
 		}
+		collection = append(collection, product)
 	}
+	return collection, err
 }
