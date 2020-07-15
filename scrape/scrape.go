@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	json "github.com/json-iterator/go"
 )
 
 func main() {
-	file := "./seed.txt"
+	file := "seed.txt"
 	fd, err := os.Open(file)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -20,8 +22,9 @@ func main() {
 	defer fd.Close()
 
 	scanner := bufio.NewScanner(fd)
-	for scanner.Scan() {
-		row := string(scanner.Bytes())
+
+	for line := 0; scanner.Scan(); line++ {
+		row := scanner.Text()
 		col := strings.Split(row, ",")
 
 		// Skip incomplete row/Not enough parameters
@@ -31,10 +34,26 @@ func main() {
 		products, err := Scrape(col[0], col[1], col[2], col[3], col[4], col[5])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			continue
 		}
-		for i := range products {
-			fmt.Println(products[i].Name)
+
+		out, err := os.Create("./data/" + strconv.Itoa(line) + ".json")
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
 		}
+		defer out.Close()
+
+		data, err := json.Marshal(map[string]interface{}{
+			"from":  col[0],
+			"count": len(products),
+			"items": products,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
+		out.Write(data)
 	}
 
 }
