@@ -87,6 +87,8 @@ func Scrape(url, base string, selector ...string) ([]Item, error) {
 	}
 	item := doc.Find(base)
 	collection := make([]Item, 0, len(item.Nodes))
+
+nodeLoop:
 	for i := range item.Nodes {
 		var product Item
 		for k, v := range selector {
@@ -100,23 +102,19 @@ func Scrape(url, base string, selector ...string) ([]Item, error) {
 			}
 			switch k { // Find image first
 			case 0:
-				product.Name = result
-			case 1:
-				product.Link = result
-			case 2:
-				product.Price = result
-			case 3:
 				// Ditch the product if has no image
 				if result == "" {
-					break
+					continue nodeLoop
 				}
 				product.Image = result
+			case 1:
+				product.Name = result
+			case 2:
+				product.Link = result
+			case 3:
+				product.Price = result
 			default:
 			}
-		}
-
-		if product.Image == "" {
-			continue
 		}
 		collection = append(collection, product)
 	}
