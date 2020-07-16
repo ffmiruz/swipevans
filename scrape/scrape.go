@@ -66,10 +66,10 @@ func main() {
 }
 
 type Item struct {
-	Name  string
-	Link  string
-	Price string
-	Image string
+	Name  string `json:"name"`
+	Link  string `json:"link"`
+	Price string `json:"price"`
+	Image string `json:"image"`
 }
 
 func Scrape(url, base string, selector ...string) ([]Item, error) {
