@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	file := "seed.txt"
+	file := "scrape/seed.txt"
 	fd, err := os.Open(file)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -22,18 +22,21 @@ func main() {
 	defer fd.Close()
 
 	scanner := bufio.NewScanner(fd)
-
 	for line := 0; scanner.Scan(); line++ {
 		row := scanner.Text()
 		col := strings.Split(row, ",")
-
 		// Skip incomplete row/Not enough parameters
 		if len(col) < 3 {
 			continue
 		}
+
 		products, err := Scrape(col[0], col[1], col[2], col[3], col[4], col[5])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
+		if len(products) < 1 {
+			fmt.Fprintln(os.Stdout, "Got no results from", col[0])
 			continue
 		}
 
@@ -45,7 +48,7 @@ func main() {
 		defer out.Close()
 
 		data, err := json.Marshal(map[string]interface{}{
-			"from":  col[0],
+			"from":  baseURL(col[0]),
 			"count": len(products),
 			"items": products,
 		})
@@ -53,7 +56,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			continue
 		}
-		out.Write(data)
+		_, err = out.Write(data)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
 	}
 
 }
@@ -73,6 +80,7 @@ func Scrape(url, base string, selector ...string) ([]Item, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		return nil, err
@@ -86,11 +94,11 @@ func Scrape(url, base string, selector ...string) ([]Item, error) {
 			result := ""
 			// Has attribute
 			if len(sel) > 1 {
-				result = item.Eq(i).Find(sel[0]).AttrOr(sel[1], "")
+				result = item.Eq(i).Find(sel[0]).First().AttrOr(sel[1], "")
 			} else {
-				result = strings.TrimSpace(item.Eq(i).Find(v).Text())
+				result = strings.TrimSpace(item.Eq(i).Find(v).First().Text())
 			}
-			switch k {
+			switch k { // Find image first
 			case 0:
 				product.Name = result
 			case 1:
@@ -98,11 +106,24 @@ func Scrape(url, base string, selector ...string) ([]Item, error) {
 			case 2:
 				product.Price = result
 			case 3:
+				// Ditch the product if has no image
+				if result == "" {
+					break
+				}
 				product.Image = result
 			default:
 			}
 		}
+
+		if product.Image == "" {
+			continue
+		}
 		collection = append(collection, product)
 	}
 	return collection, err
+}
+
+func baseURL(url string) string {
+	base := strings.Split(url, "/")[2]
+	return base
 }
