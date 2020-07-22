@@ -191,7 +191,7 @@
                         // wait transition end
                         setTimeout(() => {
                             if (e.direction == Hammer.DIRECTION_RIGHT) {
-                            let win = window.open('https://duckduckgo.com', '_blank');
+                            let win = window.open(scope.topCard.getAttribute("href"), '_blank');
                             win.focus();}
                             // remove swiped card
                             scope.board.removeChild(scope.topCard)
@@ -212,20 +212,30 @@
                 }
             },
             push: ()=> {
+                if (scope.data.length < 5) {
+                    scope.fetch()
+                }
                 console.log(scope.data.length)
                 let card = document.createElement('div')
                 card.classList.add('card')
                 card.style.backgroundImage = "url('" + scope.data[0].image +"')"
+                card.setAttribute("href", "https://" + scope.data[0].link)
 
                 scope.board.insertBefore(card, scope.board.firstChild)
                 scope.data.shift()
             },
             fetch: () => {
-                return fetch('../data/1.json', {method:'GET'})
+                return fetch('../data/'+_random()+'.json', {method:'GET'})
                  .then(r => r.json())
                  .then(obj => {scope.data=scope.data.concat(obj.items)})
             },
         }
+
+        let dbfile = 3
+        const _random = () => {
+            return Math.round(Math.random() * 100) % dbfile;
+        }
+        
         let board = document.querySelector('#board')
         scope.board = board
         scope.fetch().then(()=> scope.push()).then(()=> scope.push()).then(()=> scope.handle())
