@@ -1,0 +1,235 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title><?></title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #board {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background-color: rgb(245, 247, 250);
+        }
+        .card {
+            width: 90%;
+            height: 90vw;
+            max-height: 70vh;
+            max-width: 70vh;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 1%;
+            box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            background-size: contain;
+            background-repeat: no-repeat;
+            transform: translateX(-50%) translateY(-50%) scale(0.95);
+        }
+        .border {
+            border: 2px solid rgba(255, 0, 0, 0.5);
+        }
+        .border-gr {
+            border: 2px solid rgba(0, 255, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="board"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script>
+        const scope = {
+            data: [],
+            handle: () => {
+                // list all cards
+                scope.cards = scope.board.querySelectorAll('.card')
+
+                // get top card
+                scope.topCard = scope.cards[scope.cards.length - 1]
+
+                // get next card
+                scope.nextCard = scope.cards[scope.cards.length - 2]
+
+                // if at least one card is present
+                if (scope.cards.length > 0) {
+
+                    // set default top card position and scale
+                    scope.topCard.style.transform =
+                        'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(0deg) scale(1)'
+                    // destroy previous Hammer instance, if present
+                    if (scope.hammer) scope.hammer.destroy()
+                    // listen for tap and pan gestures on top card
+                    scope.hammer = new Hammer(scope.topCard)
+                    scope.hammer.add(new Hammer.Tap())
+                    scope.hammer.add(new Hammer.Pan({
+                        position: Hammer.position_ALL,
+                        threshold: 0
+                    }))
+                    // pass events data to custom callbacks
+                    scope.hammer.on('tap', (e) => {
+                        scope.onTap(e)
+                    })
+                    scope.hammer.on('pan', (e) => {
+                        scope.onPan(e)
+                    })
+                }
+            },
+
+            onTap: (e) => {
+                // get finger position on top card
+                let propX = (e.center.x - e.target.getBoundingClientRect().left) / e.target.clientWidth
+
+                // get rotation degrees around Y axis (+/- 15) based on finger position
+                let rotateY = 15 * (propX < 0.05 ? -1 : 1)
+
+                // enable transform transition
+                scope.topCard.style.transition = 'transform 100ms ease-out'
+
+                // apply rotation around Y axis
+                scope.topCard.style.transform =
+                    'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(' + rotateY + 'deg) scale(1)'
+
+                // wait for transition end
+                setTimeout(() => {
+                    // reset transform properties
+                    scope.topCard.style.transform =
+                        'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(0deg) scale(1)'
+                }, 100)
+
+            },
+
+            onPan: (e) => {
+                if (!scope.isPanning) {
+                    scope.isPanning = true
+
+                    // remove transition properties
+                    scope.topCard.style.transition = null
+                    if (scope.nextCard) scope.nextCard.style.transition = null
+
+                    // get top card coordinates in pixels
+                    let style = window.getComputedStyle(scope.topCard)
+                    let mx = style.transform.match(/^matrix\((.+)\)$/)
+                    scope.startPosX = mx ? parseFloat(mx[1].split(', ')[4]) : 0
+                    scope.startPosY = mx ? parseFloat(mx[1].split(', ')[5]) : 0
+
+                    // get top card bounds
+                    let bounds = scope.topCard.getBoundingClientRect()
+
+                    // get finger position on top card, top (1) or bottom (-1)
+                    scope.isDraggingFrom =
+                        (e.center.y - bounds.top) > scope.topCard.clientHeight / 2 ? -1 : 1
+
+                }
+
+                // get new coordinates
+                let posX = e.deltaX + scope.startPosX
+                let posY = e.deltaY + scope.startPosY
+                // get ratio between swiped pixels and the axes
+                let propX = e.deltaX / scope.board.clientWidth
+                let propY = e.deltaY / scope.board.clientHeight
+                // get swipe direction, left (-1) or right (1)
+                let dirX = e.deltaX < 0 ? -1 : 1
+
+                if (e.direction == Hammer.DIRECTION_LEFT && propX < -0.1) {
+                        scope.topCard.classList.remove("border-gr")
+                        scope.topCard.classList.add("border")
+                } else if (e.direction == Hammer.DIRECTION_RIGHT && propX > 0.1) {
+                    scope.topCard.classList.remove("border")
+                    scope.topCard.classList.add("border-gr")
+                } else {}
+
+                // get degrees of rotation, between 0 and +/- 45
+                let deg = scope.isDraggingFrom * dirX * Math.abs(propX) * 45
+                // get scale ratio, between .95 and 1
+                let scale = (95 + (5 * Math.abs(propX))) / 100
+
+                // move and rotate top card
+                scope.topCard.style.transform =
+                    'translateX(' + posX + 'px) translateY(' + posY + 'px) rotate(' + deg + 'deg) rotateY(0deg) scale(1)'
+
+                // scale up next card
+                if (scope.nextCard) scope.nextCard.style.transform =
+                    'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(0deg) scale(' + scale + ')'
+
+                if (e.isFinal) {
+                    scope.isPanning = false
+                    let successful = false
+
+                    // set back transition properties
+                    scope.topCard.style.transition = 'transform 200ms ease-out'
+                    if (scope.nextCard) scope.nextCard.style.transition = 'transform 100ms linear'
+
+                    // check threshold and movement direction
+                    if (propX > 0.15 && e.direction == Hammer.DIRECTION_RIGHT) {
+                        successful = true
+                        // get right border position
+                        posX = scope.board.clientWidth
+
+                    } else if (propX < -0.15 && e.direction == Hammer.DIRECTION_LEFT) {
+                        successful = true
+                        // get left border position
+                        posX = -(scope.board.clientWidth + scope.topCard.clientWidth)
+
+                    } else if (propY < -0.00 && e.direction == Hammer.DIRECTION_UP) {
+                        successful = false
+                        // get top border position
+                        posY = -(scope.board.clientHeight + scope.topCard.clientHeight)
+                    }
+
+                    if (successful) {
+                        // throw card in the chosen direction
+                        scope.topCard.style.transform =
+                            'translateX(' + posX + 'px) translateY(' + posY + 'px) rotate(' + deg + 'deg)'
+                        // wait transition end
+                        setTimeout(() => {
+                            if (e.direction == Hammer.DIRECTION_RIGHT) {
+                            let win = window.open('https://duckduckgo.com', '_blank');
+                            win.focus();}
+                            // remove swiped card
+                            scope.board.removeChild(scope.topCard)
+                            // add new card
+                            scope.push()
+                            // handle gestures on new top card
+                            scope.handle()
+                        }, 200)
+                    } else {
+                        scope.topCard.classList.remove("border-gr")
+                        scope.topCard.classList.remove("border")
+                        // reset cards position and size
+                        scope.topCard.style.transform =
+                            'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(0deg) scale(1)'
+                        if (scope.nextCard) scope.nextCard.style.transform =
+                            'translateX(-50%) translateY(-50%) rotate(0deg) rotateY(0deg) scale(0.95)'
+                    }
+                }
+            },
+            push: ()=> {
+                console.log(scope.data.length)
+                let card = document.createElement('div')
+                card.classList.add('card')
+                card.style.backgroundImage = "url('" + scope.data[0].image +"')"
+
+                scope.board.insertBefore(card, scope.board.firstChild)
+                scope.data.shift()
+            },
+            fetch: () => {
+                return fetch('../data/1.json', {method:'GET'})
+                 .then(r => r.json())
+                 .then(obj => {scope.data=scope.data.concat(obj.items)})
+            },
+        }
+        let board = document.querySelector('#board')
+        scope.board = board
+        scope.fetch().then(()=> scope.push()).then(()=> scope.push()).then(()=> scope.handle())
+    </script>
+</body>
+
+</html>

@@ -125,3 +125,7 @@ func baseURL(url string) string {
 	base := strings.Split(url, "/")[2]
 	return base
 }
+
+//TODO
+// 1. Concurrent get request.
+// 2. Marshal from anonymous struct instead.
