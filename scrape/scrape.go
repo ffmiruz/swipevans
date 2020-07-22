@@ -110,7 +110,7 @@ nodeLoop:
 			case 1:
 				product.Name = result
 			case 2:
-				product.Link = result
+				product.Link = baseURL(url) + result
 			case 3:
 				product.Price = result
 			default:
