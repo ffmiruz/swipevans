@@ -1,8 +1,6 @@
-https://kith.com/collections/vans-collection?sort_by=created-ascending,div.product-card,.product-card__image-slide@href,.product-card__title,.product-card__link@href,.product-card__price
 https://properlbc.com/collections/vans?sort_by=created-ascending,.product-index,img@data-original,div.prod-image a@title,div.prod-image a@href,span.money
 https://blacksheepskateshop.com/collections/vans?sort_by=created-ascending,.product-wrap,.quick_shop@data-feat-img,span.title,a@href,.money
-https://jackssurfboards.com/collections/vans?sort_by=created-ascending
-https://thepremierstore.com/collections/vans?sort_by=created-ascending
+https://thepremierstore.com/collections/vans?sort_by=created-ascending,.product,img@src,p.name,a.clearfix@href,.price-thumb
 https://www.blendsus.com/collections/vans-vault?sort_by=created-ascending
 https://bdgastore.com/collections/vault-by-vans?sort_by=created-ascending
 https://shopnicekicks.com/collections/vans?sort_by=created-ascending
@@ -37,3 +35,5 @@ https://undefeated.com/collections/all/vans?sort_by=created-ascending
 https://sneakerpolitics.com/collections/vans?sort_by=created-ascending
 https://shopnicekicks.com/collections/vans?sort_by=created-ascending
 https://bigshoes.com/collections/vans?sort_by=created-ascending
+https://kith.com/collections/vans-collection?sort_by=created-ascending
+https://jackssurfboards.com/collections/vans?sort_by=created-ascending
