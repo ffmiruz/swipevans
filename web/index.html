@@ -246,7 +246,7 @@
                 scope.data.shift()
             },
             fetch: () => {
-                return fetch('../data/'+_random()+'.json', {method:'GET'})
+                return fetch('./data/'+_random()+'.json', {method:'GET'})
                  .then(r => r.json())
                  .then(obj => {scope.data=scope.data.concat(obj.items)})
             },
